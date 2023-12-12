@@ -1,0 +1,152 @@
+<html lang="en">
+<head>
+
+</head>
+<body>
+  
+  <weather-widget><h1>UCSD (La Jolla)</h1>Current Weather Conditions Unavailable</weather-widget>
+<script>
+  document.querySelector("h1").style.textAlign = "center";
+</script>
+<script type="module">
+  class weatherWidget extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({mode: "open"});
+      this.shadowRoot.innerHTML = `
+      <style>
+        section {
+          display: flex;
+          flex-direction: column;
+          width: 250px;
+        }
+        h1, p {
+          text-align: center;
+        }
+      </style>
+      <section>
+      <h1>UCSD (La Jolla)</h1>
+      <img alt="Weather Icon">
+      <p id="temperature">Loading Temperature...</p>
+      <p id="weather">Loading Weather...</p>
+      <table>
+        <tr>
+          <td>Date:</td>
+          <td id="date">Loading...</td>
+        </tr>
+        <tr>
+          <td>Time:</td>
+          <td id="time">Loading...</td>
+        </tr>
+        <tr>
+          <td>Humidity:</td>
+          <td id="humidity">Loading...</td>
+        </tr>
+        <tr>
+          <td>Wind Speed:</td>
+          <td id="wind-speed">Loading...</td>
+        </tr>        
+        <tr>
+          <td>Wind Direction:</td>
+          <td id="wind-direction">Loading...</td>
+        </tr>
+      </table>
+      <section>
+      `
+      this.directions = {
+        N: 'North',
+        S: 'South',
+        E: 'East',
+        W: 'West',
+        NW: 'Northwest',
+        NE: 'Northeast',
+        SW: 'Southwest',
+        SE: 'Southeast'
+      };
+    }
+
+    connectedCallback() {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open("GET", "https://api.weather.gov/gridpoints/SGX/55,22/forecast/hourly?units=us");
+
+      // arrow function used instead of function() to maintain context of "this"
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          console.log(response);
+          this.loadFields(response);
+        } else {
+          console.error("Error:", xhr.statusText);
+        }
+      }
+
+      xhr.send();
+    }
+
+    loadFields(response) {
+      //const forecast = ;
+      const htmlTemperature = this.shadowRoot.getElementById("temperature");
+      const htmlWeather = this.shadowRoot.getElementById("weather");
+      const htmlHumidity = this.shadowRoot.getElementById("humidity");
+      const htmlWindSpeed = this.shadowRoot.getElementById("wind-speed");
+      const htmlWindDirection = this.shadowRoot.getElementById("wind-direction");
+
+      const weatherData = response.properties.periods[0];
+      const numTemperature = weatherData.temperature;
+      const unitTemperature = weatherData.temperatureUnit;
+      const descWeather = weatherData.shortForecast;
+      const numHumidity = weatherData.relativeHumidity.value;
+      const numWindSpeed = weatherData.windSpeed;
+      const windDirection = this.directions[weatherData.windDirection];
+
+      htmlTemperature.textContent = `${numTemperature} \u00B0${unitTemperature}`;
+      htmlWeather.textContent = `${descWeather}`;
+      htmlHumidity.textContent = `${numHumidity}%`;
+      htmlWindSpeed.textContent = `${numWindSpeed}`;
+      htmlWindDirection.textContent = `${windDirection}`;
+
+      this.loadDateTimeFields();
+    }
+
+    loadDateTimeFields() {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open("GET", "https://worldtimeapi.org/api/timezone/America/Los_Angeles");
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          console.log(response);
+          
+          const htmlDate = this.shadowRoot.getElementById("date");
+          const htmlTime = this.shadowRoot.getElementById("time");
+          
+          const dateTime = new Date(response.datetime);
+          const month = new Intl.DateTimeFormat("en-US", {
+            month: "2-digit"
+          }).format(dateTime);
+          const day = new Intl.DateTimeFormat("en-US", {
+            day: "2-digit"
+          }).format(dateTime);
+          const year = dateTime.getFullYear()
+          const time = new Intl.DateTimeFormat("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true
+          }).format(dateTime);
+
+          htmlDate.textContent = `${month}/${day}/${year}`;
+          htmlTime.textContent = `${time}`;
+        } else {
+          console.error("Error:", xhr.statusText);
+        }
+      }
+
+      xhr.send();      
+    }
+  }
+  customElements.define("weather-widget", weatherWidget);
+</script>
+</body>
+</html>

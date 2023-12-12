@@ -1,0 +1,120 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rating Widget</title>
+</head>
+<body>
+  <h1>Rating Widget</h1>
+  <rating-widget>
+    <form action="https://httpbin.org/post" method="POST">
+      <label for="rating">How satisfied are you?</label>
+      <input type="hidden" name="question" value="How satisfied are you?">
+      <input type="hidden" name="sentBy" value="HTML">
+      <input type="number" id="rating" name="rating" min="1" max="5" value="0" required>
+      <button type="submit">Submit</button>
+    </form>
+  </rating-widget>
+<script type="module">
+  class ratingWidget extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({mode: "open"});
+      this.shadowRoot.innerHTML = `
+        <style>
+          form {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+          }
+
+          label {
+            color: gray;
+            cursor: pointer;
+            font-size: 50px;
+          }
+
+          input {
+            display: none;
+          }
+
+          input:not(:checked) ~ label:hover,
+          input:not(:checked) ~ label:hover ~ label {
+            color: #ffad4a;
+          }
+
+          input:checked ~ label {
+            color: #ff9921;
+          }
+
+          p {
+            font-size: 30px;
+          }
+
+        </style>
+        <form action="https://httpbin.org/post" method="post">
+          <input type="hidden" name="question" value="How satisfied are you?">
+          <input type="radio" name="rating" id="rating-5" value="5">
+          <label for="rating-5">&#x2605</label>
+          <input type="radio" name="rating" id="rating-4" value="4">
+          <label for="rating-4">&#x2605</label>
+          <input type="radio" name="rating" id="rating-3" value="3">
+          <label for="rating-3">&#x2605</label>
+          <input type="radio" name="rating" id="rating-2" value="2">
+          <label for="rating-2">&#x2605</label>
+          <input type="radio" name="rating" id="rating-1" value="1">
+          <label for="rating-1">&#x2605</label>
+        </form>
+        <p><p>
+      `;
+    }
+
+    connectedCallback() {
+      const labels = this.shadowRoot.querySelectorAll("label");
+      const paragraph = this.shadowRoot.querySelector("p");
+      const form = this.shadowRoot.querySelector("form");
+
+      labels.forEach((label) => {
+        label.addEventListener("click", (event) => {
+          event.preventDefault();
+
+          const input = this.shadowRoot.getElementById(event.target.htmlFor);
+          const rating = input.value;
+
+          const formData = new FormData();
+          formData.append("question", "How satisfied are you?");
+          formData.append("rating", rating);
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.open("POST", "https://httpbin.org/post", true);
+
+          xhr.setRequestHeader("X-Sent-By", "Javascript");
+
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              console.log(xhr.responseText);
+              if (rating < 3) {
+                paragraph.innerHTML = `Thank you for your feedback of ${rating} stars. We'll try to do better!`;
+              }
+              else {
+                paragraph.innerHTML = `Thanks for ${rating} star rating!`;
+              }
+            } else {
+              console.error("Error:", xhr.statusText);
+            }
+          }
+
+          xhr.oonerror = function() {
+            console.error("Network Error");
+          }
+
+          xhr.send(formData);
+        });
+      });
+    }
+  }
+
+  customElements.define("rating-widget", ratingWidget);
+</script>
+</body>
+</html>
