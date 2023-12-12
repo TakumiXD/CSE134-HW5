@@ -3,11 +3,7 @@
 
 </head>
 <body>
-  
   <weather-widget><h1>UCSD (La Jolla)</h1>Current Weather Conditions Unavailable</weather-widget>
-<script>
-  document.querySelector("h1").style.textAlign = "center";
-</script>
 <script type="module">
   class weatherWidget extends HTMLElement {
     constructor() {
@@ -26,7 +22,7 @@
       </style>
       <section>
       <h1>UCSD (La Jolla)</h1>
-      <img alt="Weather Icon">
+      <img alt="Weather Icon" src="" id="icon">
       <p id="temperature">Loading Temperature...</p>
       <p id="weather">Loading Weather...</p>
       <table>
@@ -51,9 +47,9 @@
           <td id="wind-direction">Loading...</td>
         </tr>
       </table>
-      <section>
+      </section>
       `
-      this.directions = {
+      this.directionMappings = {
         N: 'North',
         S: 'South',
         E: 'East',
@@ -87,6 +83,7 @@
     loadFields(response) {
       //const forecast = ;
       const htmlTemperature = this.shadowRoot.getElementById("temperature");
+      const htmlWeatherIcon = this.shadowRoot.getElementById("icon");
       const htmlWeather = this.shadowRoot.getElementById("weather");
       const htmlHumidity = this.shadowRoot.getElementById("humidity");
       const htmlWindSpeed = this.shadowRoot.getElementById("wind-speed");
@@ -96,17 +93,30 @@
       const numTemperature = weatherData.temperature;
       const unitTemperature = weatherData.temperatureUnit;
       const descWeather = weatherData.shortForecast;
+      const iconWeather = this.descWeatherToIconName(descWeather);
       const numHumidity = weatherData.relativeHumidity.value;
       const numWindSpeed = weatherData.windSpeed;
-      const windDirection = this.directions[weatherData.windDirection];
+      const windDirection = this.directionMappings[weatherData.windDirection];
 
       htmlTemperature.textContent = `${numTemperature} \u00B0${unitTemperature}`;
+      if (iconWeather != "No Icon") {
+        htmlWeatherIcon.src = `/weatherIcons/${iconWeather}.png`;
+      }
       htmlWeather.textContent = `${descWeather}`;
       htmlHumidity.textContent = `${numHumidity}%`;
       htmlWindSpeed.textContent = `${numWindSpeed}`;
       htmlWindDirection.textContent = `${windDirection}`;
 
       this.loadDateTimeFields();
+    }
+
+    descWeatherToIconName(desc) {
+      desc = desc.toLowerCase();
+      if (desc.includes("sunny")) return "sunny";
+      if (desc.includes("cloudy")) return "cloudy";
+      if (desc.includes("clear")) return "clear";
+      if (desc.includes("rain")) return "rain";
+      return "No Icon";
     }
 
     loadDateTimeFields() {
